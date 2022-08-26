@@ -1,7 +1,3 @@
-/**
- *Submitted for verification at Etherscan.io on 2022-08-17
-*/
-
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.16;
 
@@ -17,8 +13,8 @@ interface ERC20 {
 	function approve(address spender, uint256 amount) external returns (bool);
 	function transferFrom(address sender, address recipient, uint256 amount) external returns (bool);
 
-	function decreaseApproval(address spender, uint256 amount) external returns (bool success);
-	function increaseApproval(address spender, uint256 amount) external returns (bool success);
+	function increaseAllowance(address spender, uint256 amount) external returns (bool success);
+	function decreaseAllowance(address spender, uint256 amount) external returns (bool success);
 
 	event Transfer(address indexed _from, address indexed _to, uint256 _value);
 	event Approval(address indexed _owner, address indexed _spender, uint256 _value);
@@ -119,6 +115,8 @@ contract VIDT is ERC20, Controllable {
 	constructor() {
 		_validationWallet = msg.sender;
 		_balances[msg.sender] = _totalSupply;
+		fileIndex.push('');
+		fileHashes[''].index = 0;
 	}
 
 	function decimals() external view virtual override returns (uint8) {
@@ -171,17 +169,7 @@ contract VIDT is ERC20, Controllable {
 		return true;
 	}
 
-	function increaseApproval(address spender, uint256 addedValue) external override returns (bool) {
-		_approve(_msgSender(), spender, _allowances[_msgSender()][spender].add(addedValue));
-		return true;
-	}
-
 	function decreaseAllowance(address spender, uint256 subtractedValue) external returns (bool) {
-		_approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "DA1 - Decreased allowance below zero"));
-		return true;
-	}
-
-	function decreaseApproval(address spender, uint256 subtractedValue) external override returns (bool) {
 		_approve(_msgSender(), spender, _allowances[_msgSender()][spender].sub(subtractedValue, "DA1 - Decreased allowance below zero"));
 		return true;
 	}
@@ -345,7 +333,8 @@ contract VIDT is ERC20, Controllable {
 		return true;
 	}
 
-	function simpleValidateFile(bytes calldata Data) external payable returns (string calldata) {
+	function simpleValidateFile(bytes calldata Data) external returns (string calldata) {
+		require(Data.length == 64,"V3 - Invalid hash provided");
 		string calldata fileHash = string(Data);
 
 		_balances[msg.sender] = _balances[msg.sender].sub(_validationPrice);
@@ -355,18 +344,9 @@ contract VIDT is ERC20, Controllable {
 		return fileHash;
 	}
 
-	function covertValidateFile(uint256 Payment) external payable returns (bool) {
-		require(Payment >= _validationPrice || msg.value >= _validationFee,"V1 - Insufficient payment provided");
-
-		_balances[msg.sender] = _balances[msg.sender].sub(Payment);
-		_balances[_validationWallet] = _balances[_validationWallet].add(Payment);
-
-		return true;
-	}
-
 	function verifyFile(string memory fileHash) external view returns (bool verified) {
 		verified = true;
-		if (fileIndex.length == 0) {
+		if (fileIndex.length == 1) {
 			verified = false;
 		}
 		bytes memory a = bytes(fileIndex[fileHashes[fileHash].index]);
@@ -378,6 +358,7 @@ contract VIDT is ERC20, Controllable {
 		for (uint256 i = 0; i < a.length; i ++) {
 			if (a[i] != b[i]) {
 				verified = false;
+				break;
 			}
 		} }
 		if (!verified) {
@@ -466,8 +447,10 @@ contract VIDT is ERC20, Controllable {
 		return true;
 	}
 
-	function withdraw() external {
-		payable(_validationWallet).transfer(address(this).balance);
+	function withdraw(uint256 amount) external {
+		require(address(this).balance >= amount, "W1 - Insufficient balance");
+		(bool success, ) = payable(_validationWallet).call{ value: amount }("");
+		require(success, "W2 - Unable to send value, recipient may have reverted");
 	}
 
 	function validationPrice() external view returns (uint256) {
