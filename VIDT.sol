@@ -371,7 +371,7 @@ contract VIDT is ERC20, Controllable {
 	}
 
 	function verify(string memory fileHash) external view returns (bool) {
-		if (fileIndex.length == 0) {
+		if (fileIndex.length == 1) {
 			return false;
 		}
 		bytes memory a = bytes(fileIndex[fileHashes[fileHash].index]);
@@ -388,7 +388,7 @@ contract VIDT is ERC20, Controllable {
 	}
 
 	function verifyFileNFT(string memory fileHash) external view returns (uint256) {
-		if (fileIndex.length == 0) {
+		if (fileIndex.length == 1) {
 			return 0;
 		}
 		bytes memory a = bytes(fileIndex[fileHashes[fileHash].index]);
@@ -432,7 +432,7 @@ contract VIDT is ERC20, Controllable {
 	}
 
 	function listFiles(uint256 startAt, uint256 stopAt) onlyController public returns (bool) {
-		if (fileIndex.length == 0) {
+		if (fileIndex.length == 1) {
 			return false;
 		}
 		require(startAt <= fileIndex.length-1,"L1 - Please select a valid start");
