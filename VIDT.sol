@@ -93,7 +93,7 @@ contract VIDT is ERC20, Controllable {
 
 	string private constant NAME = 'VIDT DAO';
 	string private constant SYMBOL = 'VIDT';
-	uint8 private immutable _decimals = 18;
+	uint8 private constant _decimals = 18;
 	uint256 private _totalSupply = 1e27;
 
 	uint256 private _validationPrice = 1 * 10**18;
